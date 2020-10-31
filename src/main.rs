@@ -1,3 +1,4 @@
+use std::process::{Command, Stdio};
 use structopt::StructOpt;
 
 #[derive(StructOpt, Debug)]
@@ -7,12 +8,12 @@ struct Opt {
     verbose: bool,
 
     #[structopt(subcommand)]
-    lambdabuild: LambdaBuilderOpts,
+    lambdabuild: LambdaBuildOpts,
 }
 
 // actual commands
 #[derive(StructOpt, Debug)]
-enum LambdaBuilderOpts {
+enum LambdaBuildOpts {
     #[structopt(name = "lambdabuild")]
     LambdaBuild {
         #[structopt(subcommand)]
@@ -30,6 +31,26 @@ enum CmdOpts {
 
 fn main() -> Result<(), anyhow::Error> {
     let opt = Opt::from_args();
-    println!("{:?}", opt);
+
+    match &opt.lambdabuild {
+        LambdaBuildOpts::LambdaBuild { cmd, .. } => match cmd {
+            b @ CmdOpts::Build { .. } => run_build(&opt, b),
+            p @ CmdOpts::Package { .. } => run_package(&opt, p),
+        },
+    }
+}
+
+fn run_build(_opt: &Opt, _c: &CmdOpts) -> Result<(), anyhow::Error> {
+    Command::new(std::env::var("CARGO")?)
+        .arg("build")
+        .arg("--release")
+        .arg("--target")
+        .arg("x86_64-unknown-linux-musl")
+        .stdin(Stdio::null())
+        .status()?;
+    Ok(())
+}
+
+fn run_package(_opt: &Opt, c: &CmdOpts) -> Result<(), anyhow::Error> {
     Ok(())
 }
