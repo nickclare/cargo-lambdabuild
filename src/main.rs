@@ -1,5 +1,9 @@
+use cargo_metadata::MetadataCommand;
+use std::io::{Read, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use structopt::StructOpt;
+use zip::write::ZipWriter;
 
 #[derive(StructOpt, Debug)]
 struct Opt {
@@ -52,5 +56,28 @@ fn run_build(_opt: &Opt, _c: &CmdOpts) -> Result<(), anyhow::Error> {
 }
 
 fn run_package(_opt: &Opt, c: &CmdOpts) -> Result<(), anyhow::Error> {
+    let metadata = MetadataCommand::new().no_deps().exec()?;
+    let package = metadata.packages.first().unwrap();
+    let target_dir = metadata.target_directory;
+    let binary_path = target_dir.join("x86_64-unknown-linux-musl").join("release");
+    for t in package.targets.iter() {
+        if t.kind.first().unwrap() == "bin" {
+            let name = t.name.clone();
+            build_package(&name, &binary_path.join(&name), &target_dir)?;
+        }
+    }
+    Ok(())
+}
+
+fn build_package(name: &str, binary: &PathBuf, target_dir: &PathBuf) -> Result<(), anyhow::Error> {
+    let dest_path = target_dir.join(format!("{}.zip", name));
+    println!("packaging {:?} into zip named: {:?}", binary, dest_path);
+    // input
+    let mut infile = std::fs::File::open(binary)?;
+    let mut zip = zip::ZipWriter::new(std::fs::File::create(dest_path)?);
+    zip.start_file("bootstrap", zip::write::FileOptions::default())?;
+    std::io::copy(&mut infile, &mut zip)?;
+    zip.finish()?;
+
     Ok(())
 }
