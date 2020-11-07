@@ -3,12 +3,12 @@ name = "cargo-lambdabuild"
 version = "0.1.0"
 authors = ["Nicholas Clare <nickclare@gmail.com>"]
 edition = "2018"
+license = "A"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 cargo_metadata = "0.12"
-structopt ="0.3"
-color-eyre = "*"
-anyhow = "*"
-zip = "*"
+structopt = "0.3"
+anyhow = "1.0"
+zip = "0.5"
